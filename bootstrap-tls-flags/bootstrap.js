@@ -20,18 +20,18 @@ const CERT_USAGE_EMAIL_SIGNER    = 0x0010;
 const CERT_USAGE_EMAIL_RECIPIENT = 0x0020;
 const CERT_USAGE_OBJECT_SIGNER   = 0x0040;
 
-const REPEAT_COUNT = 1;
+const REPEAT_COUNT = 5;
 
 const XHR_TIMEOUT = 10000;
 
-const TELEMETRY_PING_NAME = "tls13-middlebox-tls-flags";
+const TELEMETRY_PING_NAME = "tls13-middlebox-alt-server-hello-1";
 
 // all combination of configurations we care about.
 let configurations = [
-  {versionMax: 4, versionFallbackLimit: 4, website: "https://enabled.tls13.com"},
-  {versionMax: 4, versionFallbackLimit: 4, website: "https://disabled.tls13.com"},
-  {versionMax: 3, versionFallbackLimit: 3, website: "https://control.tls12.com"},
-  {versionMax: 3, versionFallbackLimit: 3, website: "http://tls12.com"}
+  {label: "cf-tls13", versionMax: 4, versionFallbackLimit: 4, website: "https://enabled.tls13.com"},
+  {label: "cf-tls12", versionMax: 4, versionFallbackLimit: 4, website: "https://disabled.tls13.com"},
+  {label: "fb-tls13-18", versionMax: 4, versionFallbackLimit: 4, website: "https://www.tls13.facebook.com/"},
+  {label: "fb-tls13-18-sh", versionMax: 4, versionFallbackLimit: 4, website: "https://www.tls13.facebook.com/", tlsFlags : 0x40}
 ];
 
 let probe_id = null;
@@ -156,7 +156,7 @@ function makeRequest(config) {
     try {
       let xhr = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].createInstance(Ci.nsIXMLHttpRequest);
 
-      xhr.open("GET", config.website, true);
+      xhr.open("HEAD", config.website, true);
 
       xhr.timeout = XHR_TIMEOUT;
 
@@ -173,7 +173,7 @@ function makeRequest(config) {
       xhr.channel.tlsFlags = 0;
       xhr.channel.tlsFlags |= (config.versionMax << 0);
       xhr.channel.tlsFlags |= (config.versionFallbackLimit << 3);
-
+      xhr.channel.tlsFlags |= config.tlsFlags;
       xhr.addEventListener("load", e => {
         reportResult("load", e.target);
       });
